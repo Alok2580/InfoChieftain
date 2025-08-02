@@ -7,9 +7,9 @@ This project is a next-generation, AI-powered concierge chatbot designed to enha
 ---
 
 ## 🌐 Live Deployment
-Frontend Chatbot (Guest Interface) [](https://info-chieftain.vercel.app)
+Frontend Chatbot (Guest Interface) [Frontend Chatbot Link](https://info-chieftain.vercel.app)
 
-Admin Dashboard (Staff View): [](https://info-chieftain.vercel.app/dashboard)
+Admin Dashboard (Staff View): [Admin Dashboard Link](https://info-chieftain.vercel.app/dashboard)
 
 
 ## 🎥 Live Demo & Walkthrough
