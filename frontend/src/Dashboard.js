@@ -3,7 +3,7 @@ import axios from 'axios';
 import io from 'socket.io-client';
 import './Dashboard.css';
 
-const socket = io('http://localhost:5001');
+const socket = io(process.env.REACT_APP_API_URL);
 
 function Dashboard() {
   const [bookings, setBookings] = useState([]);
@@ -12,9 +12,9 @@ function Dashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const bookingsRes = await axios.get('http://localhost:5001/api/chat/bookings');
+        const bookingsRes = await axios.get(`${process.env.REACT_APP_API_URL}/api/chat/bookings`);
         setBookings(bookingsRes.data);
-        const ordersRes = await axios.get('http://localhost:5001/api/chat/room-service');
+        const ordersRes = await axios.get(`${process.env.REACT_APP_API_URL}/api/chat/room-service`);
         setOrders(ordersRes.data);
       } catch (error) {
         console.error("Could not fetch initial data", error);
@@ -55,7 +55,7 @@ function Dashboard() {
 
   const handleBookingStatusUpdate = async (id, status) => {
     try {
-      await axios.put(`http://localhost:5001/api/chat/bookings/${id}`, { status });
+      await axios.put(`${process.env.REACT_APP_API_URL}/api/chat/bookings/${id}`, { status });
     } catch (error) {
       console.error("Failed to update booking status", error);
       alert("Failed to update booking status.");
@@ -64,7 +64,7 @@ function Dashboard() {
 
   const handleRoomServiceStatusUpdate = async (id, status) => {
     try {
-      await axios.put(`http://localhost:5001/api/chat/room-service/${id}`, { status });
+      await axios.put(`${process.env.REACT_APP_API_URL}/api/chat/room-service/${id}`, { status });
     } catch (error) {
       console.error("Failed to update room service status", error);
       alert("Failed to update room service status.");

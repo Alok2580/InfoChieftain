@@ -3,7 +3,7 @@ import axios from 'axios';
 import io from 'socket.io-client';
 import './App.css';
 
-const socket = io('http://localhost:5001');
+const socket = io(process.env.REACT_APP_API_URL);
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 const recognition = SpeechRecognition ? new SpeechRecognition() : null;
@@ -88,7 +88,7 @@ function App() {
     setInput('');
 
     try {
-      const response = await axios.post('http://localhost:5001/api/chat', {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/chat`, {
         message: messageToSend,
         history: historyForApi, // Send the history *without* the new message
         socketId: socketId
