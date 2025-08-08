@@ -26,6 +26,21 @@ const io = new Server(server, {
 // Make io accessible to our routes
 app.set("socketio", io);
 
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(
+  cors({
+    origin: ["http://localhost:3000", "https://info-chieftain.vercel.app"],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
+
+// Import and use routes
+const fileRoutes = require("./routes/fileRoutes");
+app.use("/api", fileRoutes);
+
 io.on("connection", (socket) => {
   console.log("A user connected to Socket.IO");
   socket.on("disconnect", () => {
@@ -47,7 +62,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/chat", require("./routes/chatRoutes"));
-app.use('/api', require('./routes/uploadRoutes'));
+app.use("/api", require("./routes/uploadRoutes"));
 const PORT = process.env.PORT || 5001;
 
 // Listen on the http server, not the Express app

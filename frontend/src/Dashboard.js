@@ -1,61 +1,103 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import io from 'socket.io-client';
-import './Dashboard.css';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import io from "socket.io-client";
+import "./Dashboard.css";
 
 const socket = io(process.env.REACT_APP_API_URL);
 
 function Dashboard() {
   const [bookings, setBookings] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [files, setFiles] = useState([]);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const bookingsRes = await axios.get(`${process.env.REACT_APP_API_URL}/api/chat/bookings`);
+        const bookingsRes = await axios.get(
+          `${process.env.REACT_APP_API_URL}/api/chat/bookings`
+        );
         setBookings(bookingsRes.data);
-        const ordersRes = await axios.get(`${process.env.REACT_APP_API_URL}/api/chat/room-service`);
+        const ordersRes = await axios.get(
+          `${process.env.REACT_APP_API_URL}/api/chat/room-service`
+        );
         setOrders(ordersRes.data);
+        const filesRes = await axios.get(
+          `${process.env.REACT_APP_API_URL}/api/files`
+        );
+        setFiles(filesRes.data);
       } catch (error) {
         console.error("Could not fetch initial data", error);
       }
     };
-    
-  
 
     fetchData();
 
-    socket.on('new_booking', (newBooking) => {
-      setBookings(prev => [newBooking, ...prev]);
+    socket.on("new_booking", (newBooking) => {
+      setBookings((prev) => [newBooking, ...prev]);
     });
 
-    socket.on('new_room_service', (newOrder) => {
-      setOrders(prev => [newOrder, ...prev]);
+    socket.on("new_room_service", (newOrder) => {
+      setOrders((prev) => [newOrder, ...prev]);
     });
 
-    socket.on('booking_status_updated', (updatedBooking) => {
-      setBookings(prev => 
-        prev.map(b => b._id === updatedBooking._id ? updatedBooking : b)
+    socket.on("booking_status_updated", (updatedBooking) => {
+      setBookings((prev) =>
+        prev.map((b) => (b._id === updatedBooking._id ? updatedBooking : b))
       );
     });
 
-    socket.on('room_service_status_updated', (updatedOrder) => {
-      setOrders(prev => 
-        prev.map(o => o._id === updatedOrder._id ? updatedOrder : o)
+    socket.on("room_service_status_updated", (updatedOrder) => {
+      setOrders((prev) =>
+        prev.map((o) => (o._id === updatedOrder._id ? updatedOrder : o))
       );
     });
 
     return () => {
-      socket.off('new_booking');
-      socket.off('new_room_service');
-      socket.off('booking_status_updated');
-      socket.off('room_service_status_updated');
+      socket.off("new_booking");
+      socket.off("new_room_service");
+      socket.off("booking_status_updated");
+      socket.off("room_service_status_updated");
     };
   }, []);
 
+  const handleFileChange = (e) => {
+    setSelectedFile(e.target.files[0]);
+  };
+
+  const handleFileUpload = async () => {
+    if (!selectedFile) {
+      alert("Please select a file to upload.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+
+    try {
+      const res = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/upload`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      setFiles((prevFiles) => [res.data, ...prevFiles]);
+      setSelectedFile(null);
+    } catch (error) {
+      console.error("Failed to upload file", error);
+      alert("Failed to upload file.");
+    }
+  };
+
   const handleBookingStatusUpdate = async (id, status) => {
     try {
-      await axios.put(`${process.env.REACT_APP_API_URL}/api/chat/bookings/${id}`, { status });
+      await axios.put(
+        `${process.env.REACT_APP_API_URL}/api/chat/bookings/${id}`,
+        { status }
+      );
     } catch (error) {
       console.error("Failed to update booking status", error);
       alert("Failed to update booking status.");
@@ -64,7 +106,10 @@ function Dashboard() {
 
   const handleRoomServiceStatusUpdate = async (id, status) => {
     try {
-      await axios.put(`${process.env.REACT_APP_API_URL}/api/chat/room-service/${id}`, { status });
+      await axios.put(
+        `${process.env.REACT_APP_API_URL}/api/chat/room-service/${id}`,
+        { status }
+      );
     } catch (error) {
       console.error("Failed to update room service status", error);
       alert("Failed to update room service status.");
@@ -78,6 +123,50 @@ function Dashboard() {
         <p>Real-time Hotel Operations</p>
       </header>
       <main className="dashboard-main">
+        <div className="dashboard-section">
+          <h2>Upload Hotel Information</h2>
+          <div className="upload-section">
+            <input type="file" onChange={handleFileChange} />
+            <button onClick={handleFileUpload} className="btn-upload">
+              Upload
+            </button>
+          </div>
+        </div>
+
+        <div className="dashboard-section">
+          <h2>Uploaded Files</h2>
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>File Name</th>
+                  <th>File Type</th>
+                  <th>Uploaded At</th>
+                  <th>Link</th>
+                </tr>
+              </thead>
+              <tbody>
+                {files.map((file) => (
+                  <tr key={file._id}>
+                    <td>{file.fileName}</td>
+                    <td>{file.fileType}</td>
+                    <td>{new Date(file.createdAt).toLocaleString()}</td>
+                    <td>
+                      <a
+                        href={file.filePath}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        View File
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <div className="dashboard-section">
           <h2>Booking Requests</h2>
           <div className="table-container">
@@ -94,15 +183,37 @@ function Dashboard() {
                 {bookings.map((booking) => (
                   <tr key={booking._id}>
                     <td>{booking.details}</td>
-                    <td><span className={`status status-${booking.status.toLowerCase()}`}>{booking.status}</span></td>
+                    <td>
+                      <span
+                        className={`status status-${booking.status.toLowerCase()}`}
+                      >
+                        {booking.status}
+                      </span>
+                    </td>
                     <td>{new Date(booking.createdAt).toLocaleString()}</td>
                     <td>
-                      {booking.status === 'Pending' ? (
+                      {booking.status === "Pending" ? (
                         <div className="action-buttons">
-                          <button onClick={() => handleBookingStatusUpdate(booking._id, 'Approved')} className="btn-approve">Approve</button>
-                          <button onClick={() => handleBookingStatusUpdate(booking._id, 'Declined')} className="btn-decline">Decline</button>
+                          <button
+                            onClick={() =>
+                              handleBookingStatusUpdate(booking._id, "Approved")
+                            }
+                            className="btn-approve"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleBookingStatusUpdate(booking._id, "Declined")
+                            }
+                            className="btn-decline"
+                          >
+                            Decline
+                          </button>
                         </div>
-                      ) : ( <span>-</span> )}
+                      ) : (
+                        <span>-</span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -127,15 +238,43 @@ function Dashboard() {
                 {orders.map((order) => (
                   <tr key={order._id}>
                     <td>{order.details}</td>
-                    <td><span className={`status status-${order.status.toLowerCase()}`}>{order.status}</span></td>
+                    <td>
+                      <span
+                        className={`status status-${order.status.toLowerCase()}`}
+                      >
+                        {order.status}
+                      </span>
+                    </td>
                     <td>{new Date(order.createdAt).toLocaleString()}</td>
                     <td>
-                      {order.status === 'Pending' ? (
+                      {order.status === "Pending" ? (
                         <div className="action-buttons">
-                          <button onClick={() => handleRoomServiceStatusUpdate(order._id, 'Approved')} className="btn-approve">Approve</button>
-                          <button onClick={() => handleRoomServiceStatusUpdate(order._id, 'Declined')} className="btn-decline">Decline</button>
+                          <button
+                            onClick={() =>
+                              handleRoomServiceStatusUpdate(
+                                order._id,
+                                "Approved"
+                              )
+                            }
+                            className="btn-approve"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={() =>
+                              handleRoomServiceStatusUpdate(
+                                order._id,
+                                "Declined"
+                              )
+                            }
+                            className="btn-decline"
+                          >
+                            Decline
+                          </button>
                         </div>
-                      ) : ( <span>-</span> )}
+                      ) : (
+                        <span>-</span>
+                      )}
                     </td>
                   </tr>
                 ))}
