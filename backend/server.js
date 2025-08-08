@@ -2,11 +2,13 @@ const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
 const connectDB = require("./config/db");
+const connectCloudinary = require("./config/cloudinary");
 const http = require("http"); // Import http
 const { Server } = require("socket.io"); // Import Server from socket.io
 
 dotenv.config();
 connectDB();
+connectCloudinary();
 
 const app = express();
 
@@ -45,7 +47,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/chat", require("./routes/chatRoutes"));
-
+app.use('/api', require('./routes/uploadRoutes'));
 const PORT = process.env.PORT || 5001;
 
 // Listen on the http server, not the Express app
