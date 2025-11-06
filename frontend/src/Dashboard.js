@@ -152,12 +152,41 @@ function Dashboard() {
                     <td>{file.fileType}</td>
                     <td>{new Date(file.createdAt).toLocaleString()}</td>
                     <td>
-                      <a
-                        href={file.filePath}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        onClick={() => {
+                          const pdfWindow = window.open('', '_blank');
+                          pdfWindow.document.write(`
+                            <html>
+                              <head>
+                                <title>${file.fileName}</title>
+                                <style>
+                                  body { margin: 0; }
+                                  embed { 
+                                    width: 100vw; 
+                                    height: 100vh; 
+                                    border: none;
+                                  }
+                                </style>
+                              </head>
+                              <body>
+                                <embed
+                                  src="${file.filePath}"
+                                  type="application/pdf"
+                                />
+                              </body>
+                            </html>
+                          `);
+                        }}
+                        className="view-file-button"
                       >
                         View File
+                      </button>
+                      <a
+                        href={`${file.filePath}?dl=1`}
+                        download={file.fileName}
+                        className="download-file-button"
+                      >
+                        Download
                       </a>
                     </td>
                   </tr>
