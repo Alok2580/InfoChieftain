@@ -4,54 +4,56 @@ const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
 const File = require("../models/file");
 
-// Configure multer for handling file uploads
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 10 * 1024 * 1024, // Limit file size to 10MB
-  },
+  limits: { fileSize: 10 * 1024 * 1024 }
 });
 
-// Route to handle file uploads
 router.post("/upload", upload.single("file"), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ message: "No file uploaded" });
-    }
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
 
-    // Convert buffer to base64
     const fileString = req.file.buffer.toString("base64");
     const uploadStr = `data:${req.file.mimetype};base64,${fileString}`;
 
-    // Upload to Cloudinary
+    // Use 'raw' resource type for PDFs, 'auto' for others
+    const resourceType = req.file.mimetype === "application/pdf" ? "raw" : "auto";
+
+    // Upload the file without transformation options
     const uploadResponse = await cloudinary.uploader.upload(uploadStr, {
-      resource_type: "auto",
+      resource_type: resourceType
     });
 
-    // Create new file document
+    // Generate file URL: For PDFs, explicitly set transformation for inline viewing
+    let fileUrl = uploadResponse.secure_url;
+    if (req.file.mimetype === "application/pdf") {
+      fileUrl = cloudinary.url(uploadResponse.public_id, {
+        secure: true,
+        resource_type: 'raw',
+        transformation: "fl_attachment:false"
+      });
+    }
+
     const file = new File({
       fileName: req.file.originalname,
       fileType: req.file.mimetype,
-      filePath: uploadResponse.secure_url,
+      filePath: fileUrl,
+      fileSize: req.file.size
     });
-
-    // Save to database
+    
     await file.save();
-
     res.status(201).json(file);
   } catch (error) {
-    console.error("Error in file upload:", error);
+    console.error("Error:", error);
     res.status(500).json({ message: "Error uploading file" });
   }
 });
 
-// Route to get all files
 router.get("/files", async (req, res) => {
   try {
     const files = await File.find().sort({ createdAt: -1 });
     res.json(files);
   } catch (error) {
-    console.error("Error fetching files:", error);
     res.status(500).json({ message: "Error fetching files" });
   }
 });

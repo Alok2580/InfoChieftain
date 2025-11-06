@@ -62,7 +62,6 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/chat", require("./routes/chatRoutes"));
-app.use("/api", require("./routes/uploadRoutes"));
 const PORT = process.env.PORT || 5001;
 
 // Listen on the http server, not the Express app

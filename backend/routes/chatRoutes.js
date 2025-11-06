@@ -7,7 +7,7 @@ const RoomService = require('../models/RoomService');
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const hotelMenu = `
-- Pizza: $15
+- Pizza: $21
 - Burger: $12
 - Pasta: $14
 - Salad: $10
